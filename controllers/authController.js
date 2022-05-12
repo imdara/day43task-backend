@@ -46,8 +46,8 @@ export const forgotPasswordController = async (req, res) => {
         to: `${email}`, // list of receivers
         subject: "Regarding password reset", // Subject line
         text: "follow the given link to reset your account password", // plain text body
-        html: `<b>Click on the link below to reset your password</b>
-    <p>https://imdaras-day43task.netlify.app/reset?id=${userExist._id}</p>`, // html body
+        html: `<b>Copy the secret code below to reset your password</b>
+    <p>${userExist._id}</p>`, // html body
       });
       res.send("Mail sent successfully");
     }
