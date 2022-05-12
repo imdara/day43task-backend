@@ -32,7 +32,7 @@ export const forgotPasswordController = async (req, res) => {
     } else {
       // create reusable transporter object using the default SMTP transport
       let transporter = nodemailer.createTransport({
-        host: "smtp.mail.yahoo.com",
+        host: process.env.USER_HOST,
         port: 587,
         secure: false, // true for 465, false for other ports
         auth: {
@@ -57,10 +57,15 @@ export const forgotPasswordController = async (req, res) => {
 };
 
 export const passwordResetController = async (req, res) => {
-  const { newPassword } = req.body;
-  const _id = req.query.id;
+  const { secretCode, newPassword } = req.body;
+  const _id = secretCode;
   const salt = await bcrypt.genSalt();
   const hashedNewPassword = await bcrypt.hash(newPassword, salt);
-  await User.findOneAndUpdate({ _id }, { password: hashedNewPassword });
-  res.send("Password reset successful");
+  const userExist = await User.findOneAndUpdate(
+    { _id },
+    { password: hashedNewPassword }
+  );
+  userExist
+    ? res.send("Password reset successful")
+    : res.send("User does not exist");
 };
