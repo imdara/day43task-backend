@@ -46,7 +46,7 @@ export const forgotPasswordController = async (req, res) => {
         to: `${email}`, // list of receivers
         subject: "Regarding password reset", // Subject line
         text: "follow the given link to reset your account password", // plain text body
-        html: `<b>Copy the secret code below to reset your password</b>
+        html: `<b>the secret code to reset your password is given below</b>
     <p>${userExist._id}</p>`, // html body
       });
       res.send("Mail sent successfully");
