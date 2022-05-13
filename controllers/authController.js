@@ -17,19 +17,24 @@ export const loginController = async (req, res) => {
 
 export const signupController = async (req, res) => {
   const { name, email, password } = req.body;
-  const salt = await bcrypt.genSalt();
-  const hashedPassword = await bcrypt.hash(password, salt);
-  await User.create({ name, email, password: hashedPassword });
-  res.send("User signed up successfully");
+  const emailExist = await User.findOne({ email });
+  if (!emailExist) {
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
+    await User.create({ name, email, password: hashedPassword });
+    res.send("User signed up successfully");
+  } else res.send(`${email} is already registered`);
 };
 
 export const forgotPasswordController = async (req, res) => {
   const { email } = req.body;
+  const secretCode = String(Math.random() * 1000000000).substr(0, 6);
   try {
     const userExist = await User.findOne({ email });
     if (!userExist) {
       res.send(`${email} is not registered`);
     } else {
+      await User.findOneAndUpdate({ email }, { secretCode });
       // create reusable transporter object using the default SMTP transport
       let transporter = nodemailer.createTransport({
         host: process.env.USER_HOST,
@@ -46,8 +51,8 @@ export const forgotPasswordController = async (req, res) => {
         to: `${email}`, // list of receivers
         subject: "Regarding password reset", // Subject line
         text: "follow the given link to reset your account password", // plain text body
-        html: `<b>the secret code to reset your password is given below</b>
-    <p>${userExist._id}</p>`, // html body
+        html: `<b>OTP to reset your password is given below</b>
+    <p>${secretCode}</p>`, // html body
       });
       res.send("Mail sent successfully");
     }
@@ -58,14 +63,16 @@ export const forgotPasswordController = async (req, res) => {
 
 export const passwordResetController = async (req, res) => {
   const { secretCode, newPassword } = req.body;
-  const _id = secretCode;
   const salt = await bcrypt.genSalt();
   const hashedNewPassword = await bcrypt.hash(newPassword, salt);
-  const userExist = await User.findOneAndUpdate(
-    { _id },
-    { password: hashedNewPassword }
-  );
-  userExist
-    ? res.send("Password reset successful")
-    : res.send("User does not exist");
+  const userExist = await User.findOne({ secretCode });
+  if (!userExist) {
+    res.send("User does not exist");
+  } else {
+    await User.findOneAndUpdate(
+      { secretCode },
+      { password: hashedNewPassword, secretCode: "" }
+    );
+    res.send("Password reset successful");
+  }
 };
